@@ -117,7 +117,7 @@ class SequentialSampling(object):
 
 
 class RandomSequence(object):
-    def __init__(self, num,**kwags):
+    def __init__(self, num, **kwags):
         self.num = num
 
     def sampling(self, range_max, v_id, prev_failed=False):
@@ -125,6 +125,23 @@ class RandomSequence(object):
             print("The number of frames must be less than rangemax")
             return 
         start_index = random.randint(0, range_max - self.num + 1 )
+        return [i for i in range(start_index, start_index + self.num)]
+
+class RandomSequenceFromPoint(object):
+    def __init__(self, num , **kwags):
+        self.num = num
+
+    def sampling(self, range_max, s, v_id, prev_failed = False):
+        if range_max < self.num:
+            range_max = self.num
+        
+        start = int(range_max/s)*(s-1)
+        end = range_max
+
+        if end - start < 16:
+            start = end - 16
+
+        start_index = random.randint(start, end - self.num + 1 )
         return [i for i in range(start_index, start_index + self.num)]
     
 

@@ -33,10 +33,10 @@ def get_data(cfg):
     logging.debug("VideoIter:: clip_length = {}, interval = [train: {}, val: {}], seed = {}".format( \
                 clip_length, train_interval, val_interval, seed))
 
-    val_sampler = sampler.RandomSampling(num = clip_length,
-                                            interval = train_interval,
-                                            speed = [1.0, 1.0],
-                                            seed = (seed+0))
+    val_sampler = sampler.RandomSequenceFromPoint(  num = clip_length,
+                                                    interval = train_interval,
+                                                    speed = [1.0, 1.0],
+                                                    seed = (seed+0))
 
     vid_transform_val=transforms.Compose(
         transforms=iaa.Sequential([
@@ -56,7 +56,7 @@ def get_data(cfg):
         sometimes_aug = lambda aug: iaa.Sometimes(0.25, aug)
         sometimes_seq = lambda aug: iaa.Sometimes(0.75, aug)
         
-        train_sampler = sampler.RandomSampling(num=clip_length,
+        train_sampler = sampler.RandomSequenceFromPoint(num=clip_length,
                                                interval=train_interval,
                                                speed=[1.0, 1.0],
                                                seed=(seed+0))

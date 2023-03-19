@@ -115,14 +115,17 @@ class VideoIter(data.Dataset):
     def getitem_array_from_video(self,index):
         v_id,label,vid_path,frame_count = self.video_dict.get(index)
         try:
-            video = Video(video_path=vid_path,video_transform=self.video_transform,end_size=self.clip_size,percentage=self.video_per)
+            video = Video(video_path = vid_path, 
+                          video_transform = self.video_transform, 
+                          end_size = self.clip_size,
+                          percentage = self.video_per)
             if frame_count < 0:
                frame_count = video.count_frames()
             
             sampled_frames = []
-            for s in range(1,self.num_samplers+1):
-                range_max = int(frame_count* (s/self.num_samplers))
-                sampled_indices = self.sampler.sampling(range_max=range_max,v_id=v_id)
+            for s in range(1, self.num_samplers+1):
+                range_max = int(frame_count * (s/self.num_samplers))
+                sampled_indices = self.sampler.sampling(range_max = range_max, s = s, v_id = v_id)
                 sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
             
             sampled_frames = torch.cat(sampled_frames,dim=0)

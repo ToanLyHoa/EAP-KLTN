@@ -1,1 +1,0 @@
-epoch, loss, top_1, top_5, top_10, sampler_0 (loss, top_1, top_5, top_10), sampler_1 (loss, top_1, top_5, top_10), sampler_2 (loss, top_1, top_5, top_10), sampler_3 (loss, top_1, top_5, top_10)

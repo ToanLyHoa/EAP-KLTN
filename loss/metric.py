@@ -283,31 +283,31 @@ from einops import rearrange, repeat, reduce
 import coloredlogs, logging
 
 class MyMetric():
-    def __init__(self, num_samplers, file_path, num_total_data, num_iter, num_epoch, batch_size, epoch = 0):
+    def __init__(self, cfg, file_path, num_iter, epoch = 0):
         
         self.file_path = file_path
 
         if not os.path.exists(self.file_path):
             with open(self.file_path, 'a') as f:
                 string = "epoch, loss, top_1, top_5, top_10"
-                for i in range(num_samplers):
+                for i in range(cfg.DATA.NUM_SAMPLERS):
                     string += f", sampler_{i} (loss, top_1, top_5, top_10)"
                 f.write(string + '\n')
 
-
-        self.num_samplers = num_samplers
-        self.num_total_data = num_total_data
         self.num_inter = num_iter
-        self.num_epoch = num_epoch
-        self.batch_size = batch_size
+
+        self.num_samplers = cfg.DATA.NUM_SAMPLERS
+        self.num_epoch = cfg.TRAIN.EPOCH
+        self.batch_size = cfg.TRAIN.BATCH_SIZE
+        self.num_total_data = self.num_inter * cfg.TRAIN.BATCH_SIZE
         self.epoch = epoch
         
         self.metric_dict = {'top_1':1, 'top_5':5, 'top_10':10}
 
         # self.acc_total_list = {key:0 for key, value in self.metric_dict.items()} 
         # self.acc_list = {key:0 for key, value in self.metric_dict.items()}
-        self.acc_total_list = [{key:0 for key, value in self.metric_dict.items()} for i in range(num_samplers + 1)]
-        self.acc_list = [{key:0 for key, value in self.metric_dict.items()} for i in range(num_samplers + 1)]
+        self.acc_total_list = [{key:0 for key, value in self.metric_dict.items()} for i in range(self.num_samplers + 1)]
+        self.acc_list = [{key:0 for key, value in self.metric_dict.items()} for i in range(self.num_samplers + 1)]
         # self.loss_total_list = [0 for i in range(num_samplers)]
         # self.loss_list = [0 for i in range(num_samplers)]
         self.loss_total = 0
@@ -334,7 +334,7 @@ class MyMetric():
 
         for key, value in self.metric_dict.items():
             self.acc_list[0][key] = count_correct_top_k[key]/self.batch_size
-            self.acc_total_list[0][key] += count_correct_top_k[key]/self.num_inter
+            self.acc_total_list[0][key] += self.acc_list[0][key]/self.num_inter
 
         for i in range(1, self.num_samplers + 1):
             results = outputs[:, i - 1, :]
@@ -352,7 +352,7 @@ class MyMetric():
 
             for key, value in self.metric_dict.items():
                 self.acc_list[i][key] = count_correct_top_k[key]/self.batch_size
-                self.acc_total_list[i][key] += count_correct_top_k[key]/self.num_inter
+                self.acc_total_list[i][key] += self.acc_list[i][key]/self.num_inter
         
         pass
     
