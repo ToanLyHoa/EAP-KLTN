@@ -299,6 +299,7 @@ class MyMetric():
         self.num_samplers = cfg.DATA.NUM_SAMPLERS
         self.num_epoch = cfg.TRAIN.EPOCH
         self.batch_size = cfg.TRAIN.BATCH_SIZE
+        self.google_colab = cfg.TRAIN.GOOGLE_COLAB
         self.num_total_data = self.num_inter * cfg.TRAIN.BATCH_SIZE
         self.epoch = epoch
         
@@ -358,11 +359,15 @@ class MyMetric():
     
     def logg(self, inter, end_epoch = False, epoch = 0):
 
-        logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
-        if end_epoch:
-            logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: End epoch:: Loss: {self.loss_total} - Top_1: {self.acc_total_list[0]['top_1']} - Top5: {self.acc_total_list[0]['top_5']} - Top10: {self.acc_total_list[0]['top_10']}")
-        pass
-
+        if not self.google_colab:
+            logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
+            if end_epoch:
+                logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: End epoch:: Loss: {self.loss_total} - Top_1: {self.acc_total_list[0]['top_1']} - Top5: {self.acc_total_list[0]['top_5']} - Top10: {self.acc_total_list[0]['top_10']}")
+        else:
+            print(f"Epoch[{epoch}:{self.num_epoch}]:: Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
+            if end_epoch:
+                print(f"Epoch[{epoch}:{self.num_epoch}]:: End epoch:: Loss: {self.loss_total} - Top_1: {self.acc_total_list[0]['top_1']} - Top5: {self.acc_total_list[0]['top_5']} - Top10: {self.acc_total_list[0]['top_10']}")
+            
     def reset_batch(self):
         self.acc_list = [{key:0 for key, value in self.metric_dict.items()} for i in range(self.num_samplers + 1)]
         self.loss =0

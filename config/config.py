@@ -49,6 +49,8 @@ _C.HEAD.FINAL_CLASSIFIER_HEAD = True
 
 _C.TRAIN = CN()
 
+_C.TRAIN.GOOGLE_COLAB = False
+
 _C.TRAIN.TRAIN_CHECKPOINT = False
 _C.TRAIN.PRETRAIN_PATH = 'log/23_03_26-resnet-tempr4-video_per:0.6-num_samplers:4-optimize:adam-loss:crossentropyloss/resnet-tempr4-video_per:0.6-num_samplers:4-optimize:adam-loss:crossentropyloss-epoch:0.pth'
 
