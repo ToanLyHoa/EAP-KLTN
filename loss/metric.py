@@ -358,9 +358,9 @@ class MyMetric():
     
     def logg(self, inter, end_epoch = False, epoch = 0):
 
-        logging.info(f"Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
+        logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
         if end_epoch:
-            logging.info(f"End epoch:: Loss: {self.loss_total} - Top_1: {self.acc_total_list[0]['top_1']} - Top5: {self.acc_total_list[0]['top_5']} - Top10: {self.acc_total_list[0]['top_10']}")
+            logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: End epoch:: Loss: {self.loss_total} - Top_1: {self.acc_total_list[0]['top_1']} - Top5: {self.acc_total_list[0]['top_5']} - Top10: {self.acc_total_list[0]['top_10']}")
         pass
 
     def reset_batch(self):

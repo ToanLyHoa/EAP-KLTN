@@ -15,11 +15,11 @@ import imgaug.augmenters as iaa
         - __call__ : Main class call function for applying transformations and performing normalisation if not None.
 '''
 class Compose(object):
-    def __init__ (self,transforms,normalise=None):
+    def __init__ (self,transforms = None, normalise = None):
         self.transforms = transforms
         self.normalise = normalise
 
-    def __call__(self,data, end_size = (8, 224, 224)):
+    def __call__(self, data, end_size = (8, 224, 224)):
         # imgaug package requires batch size - apply same tranform to all frames
         T,H,W,C=data.shape
         # vid_aug  = self.transforms.to_deterministic()
@@ -46,13 +46,18 @@ class Compose(object):
         random_crop_aug = random_crop.to_deterministic()
 
         # Apply image augmentations to all frames in the video
-        data_aug = self.transforms.augment_images(data)
+
+        if self.transforms != None:
+            data_aug = self.transforms.augment_images(data)
+        else:
+            data_aug = data
 
         # Apply center crop and scaling to all frames in the video
         data_aug = [center_crop_aug.augment_image(frame) for frame in data_aug]   
 
         # Apply padding to all frames
-        data_aug = [padding_aug.augment_image(frame) for frame in data_aug]
+        if data_aug[0].shape[0] < 224 or data_aug[0].shape[1] < 224:
+            data_aug = [padding_aug.augment_image(frame) for frame in data_aug]
 
         # Apply random crop to all frames in the video
         data_aug = [random_crop_aug.augment_image(frame) for frame in data_aug]   

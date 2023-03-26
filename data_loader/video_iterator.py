@@ -13,6 +13,7 @@ import sys
 import time
 from datetime import datetime
 import json
+from PIL import Image
 
 class Video(object):
     def __init__(self, video_path, video_transform=None, end_size=(16,244,244), percentage=1.):
@@ -56,14 +57,21 @@ class Video(object):
         for ObjId, item in sorted(row, key=lambda pair: pair[0]):
             nparr = np.frombuffer(item, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             frames.append(img)
 
         # Chuyển đổi list frames sang dạng numpy array
         frames = np.asarray(frames)
 
+
         # Áp dụng phép biến đổi video nếu có
         if self.video_transform is not None:
-            frames = self.video_transform(frames, self.end_size)
+            # code cũ
+            # frames = self.video_transform(frames, self.end_size)
+
+            self.video_transform.randomize_parameters()
+            frames = [self.video_transform(Image.fromarray(frame)) for frame in frames]
+            frames = torch.stack(frames, 0).permute(1, 0, 2, 3)
             # Kiểm tra số lượng khung hình và thực hiện nội suy nếu số lượng khung hình không đúng
             if frames.shape[1] != self.end_size[0]:
                 frames = F.interpolate(frames.unsqueeze(0), size=self.end_size, mode='trilinear',align_corners=False).squeeze(0)
@@ -90,6 +98,8 @@ class VideoIter(data.Dataset):
         self.clip_size = cfg.CLIP_SIZE
         self.video_per = cfg.VIDEO_PER
         self.dataset_location = cfg.DATA_DIR
+        self.train_file = cfg.TRAIN_FILE
+        self.val_file = cfg.VAL_FILE
         self.return_video_path = cfg.RETURN_VIDEO_PATH
         assert cfg.NUM_SAMPLERS >= 1, 'VideoIter: The number of samplers cannot be smaller than 1!'
         self.num_samplers = cfg.NUM_SAMPLERS
@@ -178,9 +188,9 @@ class VideoIter(data.Dataset):
         ids=[]
 
         # Store dictionary of labels keys:'str' , values:'int' to a .JSON file (as a common reference between dataset sets)
-        if ('train' in csv_filepath):
+        if (self.train_file in csv_filepath):
             labels_dict_filepath = csv_filepath.split('train')[0]+'dictionary.json'
-        elif ('val' in csv_filepath):
+        elif (self.val_file in csv_filepath):
             labels_dict_filepath = csv_filepath.split('val')[0]+'dictionary.json'
         else:
             labels_dict_filepath = csv_filepath.split('test')[0]+'dictionary.json'

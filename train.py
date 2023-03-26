@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from einops import rearrange, repeat
-from data_loader import iterator_factory
+from data_loader import iterator_factory_augmentResNet
 from loss import create_loss
 from loss import metric
 from datetime import datetime
@@ -16,10 +16,12 @@ class Combine(nn.Module):
         super().__init__()
         self.backbone = generate_model(cfg.BACKBONE)
 
-        for param in self.backbone.parameters():
-            param.requires_grad = False
+        # for param in self.backbone.parameters():
+        #     param.requires_grad = False
 
         self.head = generate_model(cfg.HEAD)
+
+        self.file_name = cfg.TRAIN.MODEL_NAME
 
     def forward(self, data):
 
@@ -46,12 +48,33 @@ class Combine(nn.Module):
         result = torch.load(file_path)
         pass
 
+def load_checkpoint(cfg ,model, optimizer):
+
+    checkpoint = torch.load(cfg.TRAIN.PRETRAIN_PATH)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+
+    return epoch
+
+def save_checkpoint(cfg, model, optimizer, epoch, loss):
+
+    file_path = f"{cfg.TRAIN.MODEL_NAME}-epoch:{epoch}.pth"
+
+    torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            }, file_path)
+
 def create_file_log(cfg):
     """
     Update file dir, file train log, file val log, model name
     """
     now = datetime.now().strftime("%y_%m_%d")
-    file_dir = f"{now}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}"
+    file_dir = f"{now}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
     file_dir = os.path.join(cfg.TRAIN.RESULT_DIR, file_dir)
 
     if not os.path.exists(file_dir):
@@ -60,7 +83,7 @@ def create_file_log(cfg):
     cfg.TRAIN.RESULT_DIR = file_dir
     cfg.TRAIN.LOG_FILE_TRAIN = file_dir + '/train.csv'
     cfg.TRAIN.LOG_FILE_VAL = file_dir + '/val.csv'
-    cfg.TRAIN.MODEL_NAME = file_dir + f"/{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}"
+    cfg.TRAIN.MODEL_NAME = file_dir + f"/{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
     pass
 
 def create_optimizer(model, cfg):
@@ -95,7 +118,6 @@ def create_optimizer(model, cfg):
     
     return optim
 
-
 def adjust_learning_rate(lr, optimiser):
         # learning rate adjustment based on provided lr rate
         for param_group in optimiser.param_groups:
@@ -117,21 +139,31 @@ if __name__ == '__main__':
     model = Combine(cfg).to(cfg.TRAIN.DEVICE)
 
     # create data loader
-    train_loader, val_loader, len_video_train, len_video_val = iterator_factory.create(cfg.DATA)
+    train_loader, val_loader, len_video_train, len_video_val = iterator_factory_augmentResNet.create(cfg.DATA)
+    # val_loader, len_video_val = iterator_factory_temp.create(cfg.DATA)
 
     criterion = create_loss.CrossEntropyLoss
     optim = create_optimizer(model, cfg)
-    
 
     train_metric = metric.MyMetric(cfg, file_path = cfg.TRAIN.LOG_FILE_TRAIN, num_iter = len(train_loader))
     val_metric = metric.MyMetric(cfg, file_path = cfg.TRAIN.LOG_FILE_VAL, num_iter = len(val_loader))
 
-    for epoch in range(cfg.TRAIN.EPOCH):
+    start_epoch = 0
+    if cfg.TRAIN.TRAIN_CHECKPOINT == True:
+
+        start_epoch = load_checkpoint(cfg, model, optim) + 1
+        pass
+
+    # ---------- Code train AI --------------
+    for epoch in range(start_epoch, cfg.TRAIN.EPOCH):
 
         train_metric.reset_epoch()
         val_metric.reset_epoch()
         # train
         for i, (data, targets, video_path) in enumerate(train_loader):
+            # import numpy as np
+            # video = (data[0, 0, ...]*255).detach().cpu().numpy().transpose(1,2,3,0).astype(np.uint8)
+
             # reset metric
             train_metric.reset_batch()
 
@@ -142,6 +174,8 @@ if __name__ == '__main__':
             # zero the parameter gradients
             optim.zero_grad()
             outputs = model(data)
+            # outputs = rearrange(outputs, '(b s) c -> b s c', b = cfg.TRAIN.BATCH_SIZE)
+            # loss = 0
             loss = criterion(outputs, targets)
             loss.backward()
 
@@ -157,8 +191,10 @@ if __name__ == '__main__':
             else:
                 train_metric.logg(i, True, epoch)
 
-        # end epoch
 
+        # end epoch
+        if epoch%cfg.TRAIN.SAVE_FREQUENCY == 0:
+            save_checkpoint(cfg, model, optim, epoch, loss)
         # write in file
         train_metric.write_file(epoch)
 
@@ -169,21 +205,22 @@ if __name__ == '__main__':
             loss_val = 0
 
             for i, (data, targets, video_path) in enumerate(val_loader):
-
                 val_metric.reset_batch()
-
+                if i == len(val_loader) - 1:
+                    hihi = 0
                 data = data.cuda()
                 targets = targets.cuda()
                 # zero the parameter gradients
                 outputs = model(data)
+                # outputs = rearrange(outputs, '(b s) c -> b s c', s = cfg.DATA.NUM_SAMPLERS)
                 loss = criterion(outputs, targets)
 
                 # calculate metrix here
                 val_metric.update(outputs, targets, loss)
 
                 # print log
-                if i != len(train_loader) - 1:
-                    val_metric.logg(i)
+                if i != len(val_loader) - 1:
+                    val_metric.logg(i, epoch = epoch)
                 else:
                     val_metric.logg(i, True, epoch)
 
@@ -192,5 +229,4 @@ if __name__ == '__main__':
             val_metric.write_file(epoch)
 
 
-        if epoch%cfg.TRAIN.SAVE_FREQUENCY == 0:
-            model.save_model(cfg.TRAIN.MODEL_NAME, epoch)
+        

@@ -40,8 +40,8 @@ _C.HEAD.LATENT_HEADS = 8
 _C.HEAD.CROSS_DIM_HEAD = 64
 _C.HEAD.LATENT_DIM_HEAD = 64
 _C.HEAD.NUM_CLASSES = 101
-_C.HEAD.ATTN_DROPOUT = 0.5
-_C.HEAD.FF_DROPOUT = 0.5
+_C.HEAD.ATTN_DROPOUT = 0
+_C.HEAD.FF_DROPOUT = 0
 _C.HEAD.WEIGHT_TIE_LAYERS = False
 _C.HEAD.FOURIER_ENCODE_DATA = True
 _C.HEAD.SELF_PER_CROSS_ATTN = 1
@@ -49,17 +49,21 @@ _C.HEAD.FINAL_CLASSIFIER_HEAD = True
 
 _C.TRAIN = CN()
 
-_C.TRAIN.DEVICE = "cuda:0"
+_C.TRAIN.TRAIN_CHECKPOINT = False
+_C.TRAIN.PRETRAIN_PATH = 'log/23_03_26-resnet-tempr4-video_per:0.6-num_samplers:4-optimize:adam-loss:crossentropyloss/resnet-tempr4-video_per:0.6-num_samplers:4-optimize:adam-loss:crossentropyloss-epoch:0.pth'
 
+_C.TRAIN.DEVICE = "cuda:0"
 _C.TRAIN.EPOCH = 60
 _C.TRAIN.BATCH_SIZE = 16
-_C.TRAIN.WORKERS = 8
+_C.TRAIN.WORKERS = 4
 _C.TRAIN.LEARNING_RATE = 1e-2
 _C.TRAIN.WARM_UP = True
 
 # learning rate multipliers for different sets of parameters. 
 # head - pool - classifier
-_C.TRAIN.LR_MULT = [.1, .1, 1.0]
+_C.TRAIN.OPTIMIZER = 'adam'
+_C.TRAIN.LOSS = 'crossentropyloss'
+_C.TRAIN.LR_MULT = [1, 1, 1]
 _C.TRAIN.LR_STEP = [14, 32, 44]
 _C.TRAIN.LR_FACTOR = 0.1
 _C.TRAIN.WEIGHT_DECAY = 1e-5
@@ -73,6 +77,8 @@ _C.TRAIN.MODEL_NAME = ''
 _C.DATA = CN()
 
 _C.DATA.DATA_DIR = 'data/UCF-101-DB'
+_C.DATA.TRAIN_FILE = 'new_train.csv'
+_C.DATA.VAL_FILE = 'new_val.csv'
 _C.DATA.LABELS_DIR = 'label/UCF-101'
 _C.DATA.USE_GPU = True if _C.TRAIN.DEVICE != 'cpu' else False
 _C.DATA.EVAL_ONLY = False
@@ -80,10 +86,10 @@ _C.DATA.EVAL_ONLY = False
 _C.DATA.VIDEO_PER = .6
 _C.DATA.VIDEO_PER_TRAIN = .6
 _C.DATA.VIDEO_PER_VAL = .6
-_C.DATA.NUM_SAMPLERS = 4
+_C.DATA.NUM_SAMPLERS = _C.HEAD.DEPTH
 
-_C.DATA.CLIP_LENGTH = 8
-_C.DATA.CLIP_SIZE = _C.DATA.CLIP_LENGTH, 224, 224
+_C.DATA.CLIP_LENGTH = 16
+_C.DATA.CLIP_SIZE = _C.DATA.CLIP_LENGTH, 112, 112
 _C.DATA.VAL_CLIP_LENGTH = ''
 _C.DATA.VAL_CLIP_SIZE = ''
 
@@ -91,8 +97,11 @@ _C.DATA.INCLUDE_TIMESLICES = True
 _C.DATA.TRAIN_INTERVAL = [1,2]
 _C.DATA.VAL_INTERVAL = [1]
 
-_C.DATA.MEAN = [0.485, 0.456, 0.406]
-_C.DATA.STD = [0.229, 0.224, 0.225]
+# _C.DATA.MEAN = [0.485, 0.456, 0.406]
+# _C.DATA.STD = [0.229, 0.224, 0.225]
+
+_C.DATA.MEAN = [0.4345, 0.4051, 0.3775]
+_C.DATA.STD = [0.2768, 0.2713, 0.2737]
 
 _C.DATA.SEED = torch.distributed.get_rank() if torch.distributed.is_initialized() else 0
 _C.DATA.SHUFFLE_LIST_SEED = _C.DATA.SEED + 2

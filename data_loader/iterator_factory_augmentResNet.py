@@ -16,6 +16,18 @@ from data_loader.video_iterator import VideoIter
 from torch.utils.data.sampler import RandomSampler
 import data_loader.video_sampler as sampler
 
+from data_loader.spatial_transforms import (Compose, Normalize, Resize, CenterCrop,
+                                CornerCrop, MultiScaleCornerCrop,
+                                RandomResizedCrop, RandomHorizontalFlip,
+                                ToTensor, ScaleValue, ColorJitter,
+                                PickFirstChannels)
+from data_loader.temporal_transforms import (LoopPadding, TemporalRandomCrop,
+                                 TemporalCenterCrop, TemporalEvenCrop,
+                                 SlidingWindow, TemporalSubsampling)
+
+def get_normalize_method(mean, std):
+    return Normalize(mean, std)
+
 def get_data(cfg):
 
     labels_dir = cfg.LABELS_DIR
@@ -46,44 +58,67 @@ def get_data(cfg):
     #     ]),
     #     normalise=[mean,std])
 
-    vid_transform_val=transforms.Compose(normalise=[mean,std])
+    # vid_transform_val=transforms.Compose(normalise=[mean,std])
+
+    normalize = get_normalize_method(mean, std)
+    spatial_transform = [
+        Resize(cfg.CLIP_SIZE[1]),
+        CenterCrop(cfg.CLIP_SIZE[1]),
+        ToTensor()
+    ]
+    value_scale = 1
+    spatial_transform.extend([ScaleValue(value_scale), normalize])
+    spatial_transform = Compose(spatial_transform)
     
 
     
     val = VideoIter(csv_filepath=os.path.join(labels_dir, val_file),
                     sampler=val_sampler,
-                    video_transform=vid_transform_val,
+                    video_transform=spatial_transform,
                     cfg = cfg)
     
     if eval_only:
         return val
     else:
-        # Use augmentations only for part of the data
-        sometimes_aug = lambda aug: iaa.Sometimes(0.25, aug)
-        sometimes_seq = lambda aug: iaa.Sometimes(0.75, aug)
-        
         train_sampler = sampler.RandomSequenceFromPoint(num=clip_length,
                                                interval=train_interval,
                                                speed=[1.0, 1.0],
                                                seed=(seed+0))
-        
-        vid_transform_train = transforms.Compose(
-            transforms=iaa.Sequential([
-            sometimes_seq(iaa.Sequential([
-            sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2])),
-            sometimes_aug(iaa.Add((-5, 5), per_channel=True)),
-            sometimes_aug(iaa.AverageBlur(k=(1,2))),
-            sometimes_aug(iaa.Multiply((0.9, 1.1))),
-            sometimes_aug(iaa.GammaContrast((0.95,1.05),per_channel=True)),
-            sometimes_aug(iaa.AddToHueAndSaturation((-7, 7), per_channel=True)),
-            sometimes_aug(iaa.LinearContrast((0.95, 1.05))),
-            ]))
-            ]),
-            normalise=[mean,std])
+        train_crop = 'random'
+        assert train_crop in ['random', 'corner', 'center']
+        spatial_transform = []
+        train_crop_min_scale = 0.25
+        train_crop_min_ratio = 0.75
+        if train_crop == 'random':
+            spatial_transform.append(
+                RandomResizedCrop(
+                    cfg.CLIP_SIZE[1], (train_crop_min_scale, 1.0),
+                    (train_crop_min_ratio, 1.0 / train_crop_min_ratio)))
+        elif train_crop == 'corner':
+            scales = [1.0]
+            scale_step = 1 / (2**(1 / 4))
+            for _ in range(1, 5):
+                scales.append(scales[-1] * scale_step)
+            spatial_transform.append(MultiScaleCornerCrop(cfg.CLIP_SIZE[1], scales))
+        elif train_crop == 'center':
+            spatial_transform.append(Resize(cfg.CLIP_SIZE[1]))
+            spatial_transform.append(CenterCrop(cfg.CLIP_SIZE[1]))
+        normalize = get_normalize_method(cfg.MEAN, cfg.STD)
+
+        no_hflip = False
+        if not no_hflip:
+            spatial_transform.append(RandomHorizontalFlip())
+        colorjitter = False
+        if colorjitter:
+            spatial_transform.append(ColorJitter())
+        spatial_transform.append(ToTensor())
+        spatial_transform.append(ScaleValue(value_scale))
+        spatial_transform.append(normalize)
+        spatial_transform = Compose(spatial_transform)
 
         train = VideoIter(csv_filepath = os.path.join(labels_dir, train_file),
                           sampler = train_sampler,
-                          video_transform = vid_transform_train, 
+                          video_transform = spatial_transform, 
                           cfg = cfg)
         
         # if (val_clip_length == '' and val_clip_size == ''):
