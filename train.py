@@ -187,7 +187,7 @@ if __name__ == '__main__':
             train_metric.update(outputs, targets, loss)
             # print log
             if i != len(train_loader) - 1:
-                train_metric.logg(i, epoch)
+                train_metric.logg(i, epoch = epoch)
             else:
                 train_metric.logg(i, True, epoch)
 
