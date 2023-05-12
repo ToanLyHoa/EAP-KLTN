@@ -7,12 +7,12 @@ import math
 import torch
 import copy
 import numpy as np
-import imgaug.augmenters as iaa
+# import imgaug.augmenters as iaa
 import torch.multiprocessing as mp
 from torch.nn import functional as F
 import data_loader.video_transform as transforms
 import data_loader.video_iterator as video_iterator 
-from data_loader.video_iterator import VideoIter
+from data_loader.video_iterator_resnet import VideoIter
 from torch.utils.data.sampler import RandomSampler
 import data_loader.video_sampler as sampler
 
@@ -47,10 +47,21 @@ def get_data(cfg):
     logging.debug("VideoIter:: clip_length = {}, interval = [train: {}, val: {}], seed = {}".format( \
                 clip_length, train_interval, val_interval, seed))
 
-    val_sampler = sampler.RandomSequenceFromPoint(  num = clip_length,
-                                                    interval = train_interval,
-                                                    speed = [1.0, 1.0],
-                                                    seed = (seed+0))
+    if cfg.TYPE_SAMPLERS == 'scale':
+        val_sampler = sampler.RandomSequenceFromPoint(  num = clip_length,
+                                                        interval = train_interval,
+                                                        speed = [1.0, 1.0],
+                                                        seed = (seed+0))
+    elif cfg.TYPE_SAMPLERS == 'normal':
+        val_sampler = sampler.NormalSampler(video_per = cfg.VIDEO_PER, frame_skip = cfg.FRAME_SKIP)
+    elif cfg.TYPE_SAMPLERS == 'even_crop':
+        val_sampler = sampler.TemporalEvenCrop(size = cfg.CLIP_LENGTH, 
+                                                    n_samples= cfg.NUM_SAMPLERS, 
+                                                    percentage = cfg.VIDEO_PER)
+    elif cfg.TYPE_SAMPLERS == 'sequence_sampler':
+        val_sampler = sampler.SequenceSampler(len_scale = cfg.CLIP_LENGTH, 
+                                                    frame_skip = cfg.FRAME_SKIP)
+
 
     # vid_transform_val=transforms.Compose(
     #     transforms=iaa.Sequential([
@@ -70,8 +81,6 @@ def get_data(cfg):
     spatial_transform.extend([ScaleValue(value_scale), normalize])
     spatial_transform = Compose(spatial_transform)
     
-
-    
     val = VideoIter(csv_filepath=os.path.join(labels_dir, val_file),
                     sampler=val_sampler,
                     video_transform=spatial_transform,
@@ -80,10 +89,23 @@ def get_data(cfg):
     if eval_only:
         return val
     else:
-        train_sampler = sampler.RandomSequenceFromPoint(num=clip_length,
+
+        if cfg.TYPE_SAMPLERS == 'scale':
+            train_sampler = sampler.RandomSequenceFromPoint(num=clip_length,
                                                interval=train_interval,
                                                speed=[1.0, 1.0],
                                                seed=(seed+0))
+        elif cfg.TYPE_SAMPLERS == 'normal':
+            train_sampler = sampler.NormalSampler(video_per = cfg.VIDEO_PER, frame_skip = cfg.FRAME_SKIP)
+        elif cfg.TYPE_SAMPLERS == 'even_crop':
+            train_sampler = sampler.TemporalEvenCrop(size = cfg.CLIP_LENGTH, 
+                                                     n_samples= cfg.NUM_SAMPLERS, 
+                                                     percentage = cfg.VIDEO_PER)
+        elif cfg.TYPE_SAMPLERS == 'sequence_sampler':
+            train_sampler = sampler.SequenceSampler(len_scale = cfg.CLIP_LENGTH, 
+                                                    frame_skip = cfg.FRAME_SKIP)
+
+
         train_crop = 'random'
         assert train_crop in ['random', 'corner', 'center']
         spatial_transform = []
@@ -131,7 +153,7 @@ def create(cfg, return_train=True, return_len=False):
     if cfg.EVAL_ONLY:
         val = get_data(cfg)
         val_loader = torch.utils.data.DataLoader(val,
-            batch_size = cfg.BATCH_SIZE, shuffle = True,
+            batch_size = cfg.BATCH_SIZE, shuffle = False,
             num_workers = cfg.WORKERS, pin_memory = False)
         return val_loader, val.__len__()
 

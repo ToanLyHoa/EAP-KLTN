@@ -13,6 +13,7 @@ import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor as Pool
 
+
 '''
 ---  S T A R T  O F  F U N C T I O N  F I L E 2 S Q L  ---
 
@@ -52,6 +53,7 @@ def file2sql(video_i):
         cur.execute("insert into Images VALUES(?,?,?)", (objid,sqlite3.Binary(image_bytes),image_size))
         # Remove frame file (can be commented out in the case of saving the .jpg frames)
         os.remove(file_i)
+        print("remove:", file_i)
 
     # Commit changes and close connection
     con.commit()
@@ -69,7 +71,7 @@ def file2sql(video_i):
 ---  S T A R T  O F  F U N C T I O N  W O R K E R  ---
 
     [About]
-        Main worker function for saving .avi videos as .jpg frames (also creates a frames.db SQL database per video).
+        Main worker function for saving .mp4 videos as .jpg frames (also creates a frames.db SQL database per video).
     [Args]
         - file_i: String for the filepath.
     [Returns]
@@ -77,15 +79,16 @@ def file2sql(video_i):
 '''
 def worker(file_i):
     # Feedback message
-    print('process #{} is converting file: {}'.format(multiprocessing.current_process().name,file_i))
+    # print('process #{} is converting file: {}'.format(multiprocessing.current_process().name,file_i))
     sys.stdout.flush()
 
     # Only consider videos
-    if '.avi' not in file_i:
-      return
+    # if '.avi' not in file_i:
+    #   return
 
-    # Get file without .avi extension
+    # Get file without .mp4 extension
     name, ext = os.path.splitext(file_i)
+    print(name, ext)
     name = os.path.join(*(name.split(os.path.sep)[1:]))
 
     # Create destination directory for video
@@ -94,13 +97,16 @@ def worker(file_i):
     try:
         # Case that video path already exists
         if os.path.exists(dst_directory_path):
-            # Case that frames have already been extracted
-            if not os.path.exists(os.path.join(dst_directory_path, 'frame_00001.jpg')):
-                subprocess.call('rm -r {}'.format(dst_directory_path), shell=True)
-                print('remove {}'.format(dst_directory_path))
-                os.makedirs(dst_directory_path)
-            else:
-                return
+            # # Case that frames have already been extracted
+            # if not os.path.exists(os.path.join(dst_directory_path, 'frame_00001.jpg')):
+            #     subprocess.call('rm -r {}'.format(dst_directory_path), shell=True)
+            #     print('remove {}'.format(dst_directory_path))
+            #     os.makedirs(dst_directory_path)
+            # else:
+            #     return
+
+            filename_db = os.path.join(dst_directory_path,'frames.db')
+            create_db(filename_db)
         else:
             os.makedirs(dst_directory_path)
             filename_db = os.path.join(dst_directory_path,'frames.db')
@@ -111,7 +117,7 @@ def worker(file_i):
         return
 
     # FFMPEG frame extraction
-    subprocess.call(['ffmpeg', '-i', file_i, '-hide_banner', '-loglevel', 'quiet', '-vf', 'scale=-1:360', '{}/frame_%05d.jpg'.format(dst_directory_path)])
+    # subprocess.call(['ffmpeg', '-i', file_i, '-hide_banner', '-loglevel', 'quiet', '-vf', '{}/frame_%05d.jpg'.format(dst_directory_path)])
 
 '''
 ---  E N D  O F  F U N C T I O N  W O R K E R  ---
@@ -137,17 +143,17 @@ def create_db(filename):
     cursor.execute("CREATE TABLE Images(ObjId STRING, frames BLOB, size INT)")
     db.commit()
     db.close()
-
 '''
 ---  E N D  O F  F U N C T I O N  C R E A T E _ D B  ---
 '''
+
 
 if __name__ == '__main__':
 
     start = time.time()
     #SQLITE
-    base_dir = 'UCF-101-test'
-    dst_dir = 'UCF-101-test'
+    base_dir = 'UCF-101-DB'
+    dst_dir = 'UCF-101-DB'
 
     #--- Extract files from folder following pattern
     files   = glob.glob(base_dir+"*/*.avi")
@@ -158,15 +164,15 @@ if __name__ == '__main__':
     for c in os.listdir(base_dir):
 
         # --- FRAME EXTRACTION IS DONE HERE
-        base_files = glob.glob(os.path.join(base_dir,c)+"/*.avi")
-        try:
-            with Pool() as p1:
-                p1.map(worker, base_files)
+        base_files = glob.glob(os.path.join(base_dir,c)+"/*")
+        # try:
+        #     with Pool() as p1:
+        #         p1.map(worker, base_files)
 
-        except KeyboardInterrupt:
-            print ("Caught KeyboardInterrupt, terminating")
-            p1.terminate()
-            p1.join()
+        # except KeyboardInterrupt:
+        #     print ("Caught KeyboardInterrupt, terminating")
+        #     p1.terminate()
+        #     p1.join()
 
         # --- DATABASE POPULATION IS DONE HERE
         dist_files = glob.glob(os.path.join(dst_dir,c)+"/*")

@@ -163,7 +163,19 @@ class ResNet(nn.Module):
             self.load_weight(pretrained_path)
     def load_weight(self, pretrained_path):
         # raw fucntion but OK with it
-        self.load_state_dict(torch.load(pretrained_path)['state_dict'])
+        pre_trained_model=torch.load(pretrained_path)
+        new = list(pre_trained_model['state_dict'].items())
+
+        my_model_kvpair = self.state_dict()
+        count=0
+        for key,value in my_model_kvpair.items():
+            layer_name, weights = new[count]    
+            if value.shape == weights.shape:
+                my_model_kvpair[key] = weights
+            count+=1
+
+        self.load_state_dict(my_model_kvpair)
+        # self.load_state_dict(torch.load(pretrained_path)['state_dict'])
         pass
 
     def _downsample_basic_block(self, x, planes, stride):
@@ -224,8 +236,6 @@ class ResNet(nn.Module):
 
         return feature, pred
     
-
-
 
 def generate_model(model_depth, **kwargs):
     assert model_depth in [10, 18, 34, 50, 101, 152, 200]

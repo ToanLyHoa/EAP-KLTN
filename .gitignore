@@ -6,3 +6,7 @@ label/
 backbone/pretrain/
 
 log/
+
+UCF-101-JPG/
+
+log_21class/

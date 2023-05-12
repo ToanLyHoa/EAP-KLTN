@@ -33,7 +33,8 @@ class Video(object):
     # Đếm số lượng khung hình của một phần video
     def count_frames(self):
         if (os.path.isfile(self.frame_path)):
-            self.frame_count = int(int(open(self.frame_path,'r').read()) * self.video_per)
+            # self.frame_count = int(int(open(self.frame_path,'r').read()) * self.video_per)
+            self.frame_count = int(int(open(self.frame_path,'r').read()))
         else:
             logging.error('Directory {} is empty!'.format(self.frame_path))
             raise Exception("Empty directory !")
@@ -47,7 +48,7 @@ class Video(object):
         cur = con.cursor()
 
         # Lấy tên các khung hình dựa trên các chỉ số trong indices
-        frame_names = ["{}/{}".format(self.path.split('/')[-1], 'frame_%05d' % (index+1)) for index in indices]
+        frame_names = ["{}/{}".format(self.path.split('/')[-1], 'image_%05d' % (index+1)) for index in indices]
 
         # Tạo SQL query để lấy các khung hình tương ứng với tên khung hình
         sql = "SELECT Objid, frames FROM Images WHERE ObjId IN ({seq})".format(seq=','.join(['?']*len(frame_names)))
@@ -60,9 +61,13 @@ class Video(object):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             frames.append(img)
 
+        # cho truong hop train resnet3d
+        if len(frame_names) - len(row):
+            [frames.append(img) for i in range(len(frame_names) - len(row))]
+
         # Chuyển đổi list frames sang dạng numpy array
         frames = np.asarray(frames)
-
+        xxx = frames[0]
 
         # Áp dụng phép biến đổi video nếu có
         if self.video_transform is not None:
@@ -73,12 +78,13 @@ class Video(object):
             frames = [self.video_transform(Image.fromarray(frame)) for frame in frames]
             frames = torch.stack(frames, 0).permute(1, 0, 2, 3)
             # Kiểm tra số lượng khung hình và thực hiện nội suy nếu số lượng khung hình không đúng
-            if frames.shape[1] != self.end_size[0]:
-                frames = F.interpolate(frames.unsqueeze(0), size=self.end_size, mode='trilinear',align_corners=False).squeeze(0)
+            # if frames.shape[1] != self.end_size[0]:
+            #     frames = F.interpolate(frames.unsqueeze(0), size=self.end_size, mode='trilinear',align_corners=False).squeeze(0)
         else:
-            if frames.shape[0] != self.end_size[0]:
-                frames = F.interpolate(frames.unsqueeze(0), size=self.end_size, mode='trilinear',align_corners=False).squeeze(0)
-        
+            # if frames.shape[0] != self.end_size[0]:
+            #     frames = F.interpolate(frames.unsqueeze(0), size=self.end_size, mode='trilinear',align_corners=False).squeeze(0)
+            pass
+
         # Đóng kết nối
         cur.close()
         con.close()
@@ -102,6 +108,7 @@ class VideoIter(data.Dataset):
         self.val_file = cfg.VAL_FILE
         self.return_video_path = cfg.RETURN_VIDEO_PATH
         assert cfg.NUM_SAMPLERS >= 1, 'VideoIter: The number of samplers cannot be smaller than 1!'
+        self.type_samplers = cfg.TYPE_SAMPLERS
         self.num_samplers = cfg.NUM_SAMPLERS
         
         self.rng = np.random.RandomState(cfg.SHUFFLE_LIST_SEED if cfg.SHUFFLE_LIST_SEED else 0)
@@ -133,10 +140,19 @@ class VideoIter(data.Dataset):
                frame_count = video.count_frames()
             
             sampled_frames = []
-            for s in range(1, self.num_samplers+1):
-                range_max = int(frame_count * (s/self.num_samplers))
-                sampled_indices = self.sampler.sampling(range_max = range_max, s = s, v_id = v_id)
+            if self.type_samplers == 'scale':
+                for s in range(1, self.num_samplers+1):
+                    range_max = int(frame_count * (s/self.num_samplers))
+                    sampled_indices = self.sampler.sampling(range_max = range_max, s = s, v_id = v_id)
+                    sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
+            elif self.type_samplers == 'normal':
+                sampled_indices = self.sampler.sampling(frame_count)
                 sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
+            elif self.type_samplers == 'even_crop':
+                sampled_indices_list = self.sampler.sampling(frame_count)
+                for sampled_indices in sampled_indices_list:
+                    sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
+                pass
             
             sampled_frames = torch.cat(sampled_frames,dim=0)
 
@@ -154,8 +170,8 @@ class VideoIter(data.Dataset):
                     index += 1
                 frames, label, vid_path = self.getitem_array_from_video(index)
                 _, _, t, h, w = frames.size()
-                if (t!=self.clip_size[0] and h!=self.clip_size[1] and w!=self.clip_size[2]):
-                    raise Exception('Clip size should be ({},{},{}), got clip with: ({},{},{})'.format(*self.clip_size,t,h,w))
+                # if (t!=self.clip_size[0] and h!=self.clip_size[1] and w!=self.clip_size[2]):
+                #     raise Exception('Clip size should be ({},{},{}), got clip with: ({},{},{})'.format(*self.clip_size,t,h,w))
                 succ = True
             except Exception as e:
 
@@ -218,7 +234,8 @@ class VideoIter(data.Dataset):
             found_videos+=1
        
             with open(os.path.join(video_path,'n_frames')) as f:
-                frame_count = int(int(f.readline()) * video_per)
+                # frame_count = int(int(f.readline()) * video_per)
+                frame_count = int(int(f.readline()))
 
             info = [found_videos, line.get('label'), video_path, frame_count]
             videos_dict[found_videos] = info 

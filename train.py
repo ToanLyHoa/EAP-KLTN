@@ -8,7 +8,16 @@ from data_loader import iterator_factory_augmentResNet
 from loss import create_loss
 from loss import metric
 from datetime import datetime
+from torch.optim import SGD, lr_scheduler
 import os
+import cv2
+import numpy as np
+
+def save_vid(video):
+    out = cv2.VideoWriter('output.mp4', cv2.VideoWriter_fourcc(*'MP4V'), 1.0, (video.shape[2],video.shape[1]))
+    for frame in video:
+        out.write(frame)
+    out.release()
 
 class Combine(nn.Module):
 
@@ -32,6 +41,7 @@ class Combine(nn.Module):
         # feature: ((b s), c, t, h, w)
         # pred: ((b s), n)
         features, pred = self.backbone(data)
+        print(features.shape)
 
         features = rearrange(features, '(b s) c t h w -> b s c t h w', b = B)
 
@@ -54,11 +64,12 @@ def load_checkpoint(cfg ,model, optimizer):
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
+    best_acc = checkpoint['best_acc']
     loss = checkpoint['loss']
 
-    return epoch
+    return epoch, best_acc
 
-def save_checkpoint(cfg, model, optimizer, epoch, loss):
+def save_checkpoint(cfg, model, optimizer, epoch, loss, best_acc):
 
     file_path = f"{cfg.TRAIN.MODEL_NAME}-epoch:{epoch}.pth"
 
@@ -67,8 +78,19 @@ def save_checkpoint(cfg, model, optimizer, epoch, loss):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,
+            'best_acc': best_acc
             }, file_path)
+    
+def save_best(model, optimizer, epoch):
 
+    # file_path = f"{cfg.TRAIN.MODEL_NAME}-epoch:{epoch}.pth"
+
+    torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            }, 'model_best.pth')
+    
 def create_file_log(cfg):
     """
     Update file dir, file train log, file val log, model name
@@ -84,6 +106,10 @@ def create_file_log(cfg):
     cfg.TRAIN.LOG_FILE_TRAIN = file_dir + '/train.csv'
     cfg.TRAIN.LOG_FILE_VAL = file_dir + '/val.csv'
     cfg.TRAIN.MODEL_NAME = file_dir + f"/{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
+    
+    # save config file
+    with open(file_dir + '/config.yaml', 'w') as f:
+        f.write(cfg.dump())
     pass
 
 def create_optimizer(model, cfg):
@@ -118,6 +144,13 @@ def create_optimizer(model, cfg):
     
     return optim
 
+def create_lr_scheduler(cfg, optimizer):
+    scheduler = lr_scheduler.MultiStepLR(optimizer,
+                                        cfg.TRAIN.LR_STEP)
+    
+    return scheduler
+
+
 def adjust_learning_rate(lr, optimiser):
         # learning rate adjustment based on provided lr rate
         for param_group in optimiser.param_groups:
@@ -134,9 +167,16 @@ if __name__ == '__main__':
 
     # create file log path
     create_file_log(cfg)
+
+    # input is the config in log dicrectory of model pretrain
+    if cfg.TRAIN.TRAIN_CHECKPOINT == True:
+        cfg.merge_from_file()
+    
+    
     cfg.freeze()
 
-    model = Combine(cfg).to(cfg.TRAIN.DEVICE)
+    # model = Combine(cfg).to(cfg.TRAIN.DEVICE)
+    model = Combine(cfg).to('cpu')
 
     # create data loader
     train_loader, val_loader, len_video_train, len_video_val = iterator_factory_augmentResNet.create(cfg.DATA)
@@ -149,9 +189,11 @@ if __name__ == '__main__':
     val_metric = metric.MyMetric(cfg, file_path = cfg.TRAIN.LOG_FILE_VAL, num_iter = len(val_loader))
 
     start_epoch = 0
-    if cfg.TRAIN.TRAIN_CHECKPOINT == True:
+    best_acc = 0
 
-        start_epoch = load_checkpoint(cfg, model, optim) + 1
+    if cfg.TRAIN.TRAIN_CHECKPOINT == True:
+        start_epoch, best_acc = load_checkpoint(cfg, model, optim)
+        start_epoch += 1
         pass
 
     # ---------- Code train AI --------------
@@ -180,7 +222,7 @@ if __name__ == '__main__':
             loss.backward()
 
             # temp here, we will apply multi grid training
-            adjust_learning_rate(0.01, optim)
+            # adjust_learning_rate(0.01, optim)
             optim.step()
 
             # calculate metric in here
@@ -193,8 +235,8 @@ if __name__ == '__main__':
 
 
         # end epoch
-        if epoch%cfg.TRAIN.SAVE_FREQUENCY == 0:
-            save_checkpoint(cfg, model, optim, epoch, loss)
+        if epoch%cfg.TRAIN.SAVE_FREQUENCY == 0 or epoch == cfg.TRAIN.EPOCH - 1:
+            save_checkpoint(cfg, model, optim, epoch, loss, best_acc)
         # write in file
         train_metric.write_file(epoch)
 
@@ -227,6 +269,13 @@ if __name__ == '__main__':
 
             # write in file
             val_metric.write_file(epoch)
+
+            # save if model best
+            if val_metric.best_acc >= best_acc:
+                best_acc = val_metric.best_acc
+                save_best(model, optim, epoch)
+
+            
 
 
         

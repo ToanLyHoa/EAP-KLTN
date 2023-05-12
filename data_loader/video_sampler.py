@@ -5,6 +5,7 @@ import math
 import numpy as np
 import coloredlogs, logging
 import random
+import cv2
 coloredlogs.install()
 
 
@@ -115,7 +116,6 @@ class SequentialSampling(object):
         idxs = range(clips[cursor], clips[cursor]+frame_range, interval)
         return idxs
 
-
 class RandomSequence(object):
     def __init__(self, num, **kwags):
         self.num = num
@@ -144,6 +144,159 @@ class RandomSequenceFromPoint(object):
         start_index = random.randint(start, end - self.num + 1 )
         return [i for i in range(start_index, start_index + self.num)]
     
+
+class NormalSampler(object):
+    def __init__(self, video_per, frame_skip = 4 , **kwags):
+        self.video_per = video_per
+        self.frame_skip = frame_skip
+        self.lenght_video = 187
+
+    def sampling(self, video_len):
+        
+        start_index = 0
+
+        end_index = int(self.lenght_video*self.video_per)
+
+        offset = 0
+        if end_index > video_len:
+            offset = end_index - video_len
+
+            indices = [i for i in range(start_index, video_len)]
+        
+            indices += [video_len - 1 for i in range(0, offset)]
+        else:
+            indices = [i for i in range(start_index, end_index)]
+
+        indices = [indices[i] for i in range(0, len(indices), self.frame_skip + 1)]
+        return indices
+
+
+class SequenceSampler(object):
+    def __init__(self, len_scale, frame_skip = 4, **kwags):
+
+        assert  len_scale < frame_skip, "len_scale should be smaller than frame_skip"
+
+        self.len_scale = len_scale
+        self.frame_skip = frame_skip
+        self.lenght_video = 187
+
+    def sampling(self, video_len):
+        
+        start_index = 0
+
+        end_index = int(self.lenght_video)
+
+        offset = 0
+        if end_index > video_len:
+            offset = end_index - video_len
+
+            indices = [i for i in range(start_index, video_len)]
+        
+            indices += [video_len - 1 for i in range(0, offset)]
+        else:
+            indices = [i for i in range(start_index, end_index)]
+
+        # indices = [indices[i] for i in range(0, len(indices), self.frame_skip + 1)]
+        # return indices
+        indices_list = []
+        for i in range(0, len(indices), self.frame_skip + self.len_scale):
+            indices = []
+            for j in range(self.len_scale):
+                indices.append(i + j)
+            indices_list.append(indices)
+
+        return indices_list
+
+
+class LoopPadding(object):
+
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, frame_indices):
+        out = frame_indices
+
+        for index in out:
+            if len(out) >= self.size:
+                break
+            out.append(index)
+
+        return out
+
+class TemporalEvenCrop(object):
+
+    def __init__(self, size, n_samples=1, percentage = .5):
+        self.size = size
+        self.n_samples = n_samples
+        self.loop = LoopPadding(size)
+        self.per = percentage
+
+    def sampling(self, frame_count):
+
+        frame_indices = [i for i in range(frame_count)]
+
+        n_frames = int(len(frame_indices)*self.per)
+
+        stride = 1
+        if self.n_samples != 1:
+            stride = max(
+                1, math.ceil((n_frames - 1 - self.size) / (self.n_samples - 1)))
+        
+        # stride = 1
+
+        out = []
+        for begin_index in frame_indices[::stride]:
+            if len(out) >= self.n_samples:
+                break
+            end_index = min(frame_indices[-1] + 1, begin_index + self.size)
+            sample = list(range(begin_index, end_index))
+
+            if len(sample) < self.size:
+                out.append(self.loop(sample))
+                break
+            else:
+                out.append(sample)
+
+        return out
+
+
+class FrameDifference(object):
+    def __init__(self,num,**kwagrs):
+        self.num=num
+
+    def sampling (self,s,video_path,num_frames,v_id, prev_failed = False ):
+        '''
+        [About]
+            Take frames indices that are significantly different from previous frames.
+        [Args]
+            s: scale of video (eg: 1/2 ,1/3 ,..)\n
+            video_path: path to avi video (eg: UCF-101-test/Archery/v_Archery_g01_c01)
+            num_frames: the number of frames of video
+        [Returns]
+            frames: list array of frame indices 
+        '''
+        video_path = video_path+'.avi'
+        cap = cv2.VideoCapture(video_path)
+        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_count = min(frame_count,num_frames)
+        prev_frame = None
+        frames = []
+        k=0
+        for i in range(int(frame_count*s)):
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if prev_frame is None or cv2.absdiff(frame, prev_frame).mean() > 7*s:
+                frames.append(i)
+                k=i
+                if len(frames) == self.num:
+                    break
+            prev_frame = frame
+        # Kiểm tra nếu không đủ số frames thì lấy thêm từ frame cuối
+        while len(frames) < self.num:
+            frames.append(k)
+        cap.release()
+        return frames
 
 if __name__ == "__main__":
 

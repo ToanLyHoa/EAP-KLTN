@@ -22,4 +22,4 @@ def find_frames(dataset_path):
         with open(os.path.join(video_file.split('/frames')[0], 'n_frames'), 'w') as dst_file:
             dst_file.write(str(n_frames))
 
-find_frames('UCF-101-test')
+find_frames('UCF-101-DB')

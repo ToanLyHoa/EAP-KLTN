@@ -298,9 +298,9 @@ class MyMetric():
 
         self.num_samplers = cfg.DATA.NUM_SAMPLERS
         self.num_epoch = cfg.TRAIN.EPOCH
-        self.batch_size = cfg.TRAIN.BATCH_SIZE
+        self.batch_size = cfg.DATA.BATCH_SIZE
         self.google_colab = cfg.TRAIN.GOOGLE_COLAB
-        self.num_total_data = self.num_inter * cfg.TRAIN.BATCH_SIZE
+        self.num_total_data = self.num_inter * cfg.DATA.BATCH_SIZE
         self.epoch = epoch
         
         self.metric_dict = {'top_1':1, 'top_5':5, 'top_10':10}
@@ -314,6 +314,8 @@ class MyMetric():
         self.loss_total = 0
         self.loss = 0
 
+        self.best_acc = 0
+
     def update(self, outputs, targets, loss):
 
         # mean of scale
@@ -321,6 +323,8 @@ class MyMetric():
         self.loss = loss
 
         results = reduce(outputs, 'b s n -> b n', 'mean')
+
+        batch_size = results.shape[0]
 
         count_correct_top_k = {key:0 for key, value in self.metric_dict.items()}
         pred_top_k = {key:[] for key, value in self.metric_dict.items()}
@@ -334,7 +338,7 @@ class MyMetric():
                     count_correct_top_k[key] += 1
 
         for key, value in self.metric_dict.items():
-            self.acc_list[0][key] = count_correct_top_k[key]/self.batch_size
+            self.acc_list[0][key] = count_correct_top_k[key]/batch_size
             self.acc_total_list[0][key] += self.acc_list[0][key]/self.num_inter
 
         for i in range(1, self.num_samplers + 1):
@@ -352,7 +356,7 @@ class MyMetric():
                         count_correct_top_k[key] += 1
 
             for key, value in self.metric_dict.items():
-                self.acc_list[i][key] = count_correct_top_k[key]/self.batch_size
+                self.acc_list[i][key] = count_correct_top_k[key]/batch_size
                 self.acc_total_list[i][key] += self.acc_list[i][key]/self.num_inter
         
         pass
@@ -362,6 +366,10 @@ class MyMetric():
         if not self.google_colab:
             logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
             if end_epoch:
+                
+                if self.acc_total_list[0]['top_1'] >= self.best_acc:
+                    self.best_acc = self.acc_total_list[0]['top_1']
+
                 logging.info(f"Epoch[{epoch}:{self.num_epoch}]:: End epoch:: Loss: {self.loss_total} - Top_1: {self.acc_total_list[0]['top_1']} - Top5: {self.acc_total_list[0]['top_5']} - Top10: {self.acc_total_list[0]['top_10']}")
         else:
             print(f"Epoch[{epoch}:{self.num_epoch}]:: Interator[{inter}/{self.num_inter}]:: Loss: {self.loss} - Top_1: {self.acc_list[0]['top_1']} - Top5: {self.acc_list[0]['top_5']} - Top10: {self.acc_list[0]['top_10']}")
