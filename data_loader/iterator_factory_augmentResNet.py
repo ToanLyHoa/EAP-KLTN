@@ -61,6 +61,8 @@ def get_data(cfg):
     elif cfg.TYPE_SAMPLERS == 'sequence_sampler':
         val_sampler = sampler.SequenceSampler(len_scale = cfg.CLIP_LENGTH, 
                                                     frame_skip = cfg.FRAME_SKIP)
+    elif cfg.TYPE_SAMPLERS == 'fix_length':
+        val_sampler = sampler.FixLengthSampler(cfg.CLIP_LENGTH, cfg.FRAME_SKIP)
 
 
     # vid_transform_val=transforms.Compose(
@@ -104,6 +106,8 @@ def get_data(cfg):
         elif cfg.TYPE_SAMPLERS == 'sequence_sampler':
             train_sampler = sampler.SequenceSampler(len_scale = cfg.CLIP_LENGTH, 
                                                     frame_skip = cfg.FRAME_SKIP)
+        elif cfg.TYPE_SAMPLERS == 'fix_length':
+            train_sampler = sampler.FixLengthSampler(cfg.CLIP_LENGTH, cfg.FRAME_SKIP)
 
 
         train_crop = 'random'

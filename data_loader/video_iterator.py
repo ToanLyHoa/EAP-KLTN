@@ -154,6 +154,7 @@ class VideoIter(data.Dataset):
                     sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
                 pass
             
+            
             sampled_frames = torch.cat(sampled_frames,dim=0)
 
         except IOError as e:

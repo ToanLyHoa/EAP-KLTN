@@ -46,7 +46,8 @@ def get_data(cfg):
     #     ]),
     #     normalise=[mean,std])
 
-    vid_transform_val=transforms.Compose(normalise=[mean,std])
+    # vid_transform_val=transforms.Compose(normalise=[mean,std])
+    vid_transform_val=[]
     
 
     
@@ -67,19 +68,22 @@ def get_data(cfg):
                                                speed=[1.0, 1.0],
                                                seed=(seed+0))
         
-        vid_transform_train = transforms.Compose(
-            transforms=iaa.Sequential([
-            sometimes_seq(iaa.Sequential([
-            sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2])),
-            sometimes_aug(iaa.Add((-5, 5), per_channel=True)),
-            sometimes_aug(iaa.AverageBlur(k=(1,2))),
-            sometimes_aug(iaa.Multiply((0.9, 1.1))),
-            sometimes_aug(iaa.GammaContrast((0.95,1.05),per_channel=True)),
-            sometimes_aug(iaa.AddToHueAndSaturation((-7, 7), per_channel=True)),
-            sometimes_aug(iaa.LinearContrast((0.95, 1.05))),
-            ]))
-            ]),
-            normalise=[mean,std])
+        # vid_transform_train = transforms.Compose(
+        #     transforms=iaa.Sequential([
+        #     sometimes_seq(iaa.Sequential([
+        #     sometimes_aug(iaa.GaussianBlur(sigma=[0.1,0.2])),
+        #     sometimes_aug(iaa.Add((-5, 5), per_channel=True)),
+        #     sometimes_aug(iaa.AverageBlur(k=(1,2))),
+        #     sometimes_aug(iaa.Multiply((0.9, 1.1))),
+        #     sometimes_aug(iaa.GammaContrast((0.95,1.05),per_channel=True)),
+        #     sometimes_aug(iaa.AddToHueAndSaturation((-7, 7), per_channel=True)),
+        #     sometimes_aug(iaa.LinearContrast((0.95, 1.05))),
+        #     ]))
+        #     ]),
+        #     normalise=[mean,std])
+        
+        vid_transform_train = []
+
 
         train = VideoIter(csv_filepath = os.path.join(labels_dir, train_file),
                           sampler = train_sampler,

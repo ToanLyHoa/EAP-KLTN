@@ -153,6 +153,9 @@ class VideoIter(data.Dataset):
                 for sampled_indices in sampled_indices_list:
                     sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
                 pass
+            elif self.type_samplers == 'fix_length':
+                sampled_indices = self.sampler.sampling(frame_count)
+                sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
             
             sampled_frames = torch.cat(sampled_frames,dim=0)
 

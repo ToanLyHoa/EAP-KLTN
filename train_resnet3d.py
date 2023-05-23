@@ -68,7 +68,7 @@ def load_checkpoint(cfg ,model, optimizer, learning_rate_scheduler):
 
 def save_checkpoint(cfg, model, optimizer, learning_rate_scheduler, epoch, best_acc):
 
-    file_path = f"{cfg.TRAIN.MODEL_NAME}-epoch:{epoch}.pth"
+    file_path = f"{cfg.TRAIN.MODEL_NAME}.pth"
 
     torch.save({
             'epoch': epoch,
@@ -93,7 +93,7 @@ def create_file_log(cfg):
     Update file dir, file train log, file val log, model name
     """
     now = datetime.now().strftime("%y_%m_%d")
-    file_dir = f"{now}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-{cfg.DATA.FRAME_SKIP}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
+    file_dir = f"{now}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-video_len{cfg.DATA.CLIP_LENGTH}-frame_skip:{cfg.DATA.FRAME_SKIP}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
     file_dir = os.path.join(cfg.TRAIN.RESULT_DIR, file_dir)
 
     if not os.path.exists(file_dir):
@@ -142,6 +142,7 @@ def create_optimizer(model, cfg):
     else:
         parameters = model.parameters()
 
+
     optimizer = SGD(parameters,
                     lr=cfg.TRAIN.LEARNING_RATE,
                     momentum=cfg.TRAIN.MOMENTUM,
@@ -176,7 +177,7 @@ if __name__ == '__main__':
         cfg.TRAIN.TRAIN_CHECKPOINT = True
     else:
         # create file log path
-        cfg.merge_from_file('config/resnet3d_18_sampler:3_per:0.5_21class.yaml')
+        cfg.merge_from_file('config/resnet3d_18_fixlenght:16_skip:0.yaml')
         create_file_log(cfg)
     cfg.freeze()
 

@@ -144,7 +144,6 @@ class RandomSequenceFromPoint(object):
         start_index = random.randint(start, end - self.num + 1 )
         return [i for i in range(start_index, start_index + self.num)]
     
-
 class NormalSampler(object):
     def __init__(self, video_per, frame_skip = 4 , **kwags):
         self.video_per = video_per
@@ -169,7 +168,6 @@ class NormalSampler(object):
 
         indices = [indices[i] for i in range(0, len(indices), self.frame_skip + 1)]
         return indices
-
 
 class SequenceSampler(object):
     def __init__(self, len_scale, frame_skip = 4, **kwags):
@@ -207,6 +205,19 @@ class SequenceSampler(object):
 
         return indices_list
 
+class FixLengthSampler(object):
+    def __init__(self, lenght = 0, skip = 0):
+        
+        self.lenght = lenght
+        self.skip = skip
+        
+        pass
+
+    def sampling(self, video_len = None):
+        indices_list = [i*(self.skip + 1) if i*(self.skip + 1) < (video_len - 1) 
+                                            else (video_len - 1)
+                        for i in range(0, self.lenght)]
+        return indices_list
 
 class LoopPadding(object):
 
