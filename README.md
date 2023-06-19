@@ -1,18 +1,38 @@
-# EAP-KLTN
+# Hướng dẫn từng bước chạy mô hình
 
-Chinh dong 227, dong 36 video_iterator.py frame_count = int(int(f.readline()) * video_per) bo di nhan voi video_per
+# 1. Công tác dữ liệu:
 
-Chinh dong 64 video_iterator.py cho 
+Tải tập dữ liệu UCF-101 [tại đây](https://www.crcv.ucf.edu/data/UCF101.php)
 
-if len(frame_names) - len(row):
-            [frames.append(img) for i in range(len(frame_names) - len(row))]
+Sau đó tiền xử lí dữ liệu cho UCF-101 như ở [ResNet3D Pytorch](https://github.com/kenshohara/3D-ResNets-PyTorch#ucf-101)
 
+Đặt tên cho folder dữ liệu là UCF-101-JPG sau đó chạy đoạn code sau để tạo file n_frame cho mỗi dãy ảnh
 
+```python
+    import os
+    import glob
 
+    def num_images(dataset_path,dst_path):
 
-* Thực nghiệm mô hình qua 21 lớp hành động thuộc bộ dữ liệu UCF-101 như em bé bò, phóng lao, bắn cung, nhảy dù, nhảy cao,... .Việc dự đoán hành động sớm trên các lớp hành động này đem lại ý nghĩa thiết thực trong cuộc sống hàng ngày. Ví dụ trong hành động em bé bò, việc dự đoán hành động có thể giúp cho các bậc phụ huynh và nhân viên chăm sóc trẻ nhỏ hiểu rõ hơn về giai đoạn phát triển của trẻ nhỏ và giúp cho việc chăm sóc và giáo dục trẻ nhỏ trở nên dễ dàng hơn. Hay trong hành động bắn cung, việc dự đoán hành động có thể giúp cho các VĐV, huấn luyện viên cải thiện kỹ thuật và hiệu suất thi đấu của mình.
+        if not os.path.exists(dst_path):
+            os.makedirs(dst_path)
 
-* Chạy hàm def sampling thuộc  class FrameDifference(object):
-video_iter.py: Hàm  def getitem_array_from_video(self,index) thuộc class VideoIter (line 138)
+        for image_file in glob.glob(dataset_path+'/*/*/'):
+            frames_count =0
+            for files in os.listdir(image_file):
+                if files.endswith('.jpg'):
+                    frames_count +=1
 
-sampled_indices = self.sampler.sampling(s/self.num_samplers,vid_path,frame_count,v_id)
+            if frames_count<=0:
+                print('{} does not have any frames'.format(image_file))
+                continue
+            
+            count_frame_path = os.path.join(dst_path,image_file.split('/',maxsplit=1)[-1])
+            if not os.path.exists(count_frame_path):
+                os.makedirs(count_frame_path)
+
+            with open(os.path.join(count_frame_path,'n_frames'),'w') as dst_file:
+                dst_file.write(str(frames_count))
+
+    num_images("UCF-101-JPG","UCF-101-JPG")
+
