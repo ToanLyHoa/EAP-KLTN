@@ -57,7 +57,7 @@ _C.TRAIN.GOOGLE_COLAB = False
 
 _C.TRAIN.TRAIN_CHECKPOINT = False
 _C.TRAIN.PRETRAIN_PATH = ''
-_C.TRAIN.PRETRAIN_CONFIG = 'log/23_04_14-resnet3d_50--video_per:0.5-num_samplers:1-1-optimize:SGD-loss:crossentropylossmean/config.yaml'
+_C.TRAIN.PRETRAIN_CONFIG = 'log/23_06_16-auto_skip:70-resnet3d_18--video_per:0.7-video_len70-optimize:SGD-loss:crossentropylossmean/config.yaml'
 
 _C.TRAIN.DEVICE = "cuda:0"
 _C.TRAIN.EPOCH = 60

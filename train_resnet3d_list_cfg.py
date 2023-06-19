@@ -11,6 +11,7 @@ from datetime import datetime
 from torch.optim import SGD, lr_scheduler
 import os
 import numpy as np
+import time
 
 
 class Combine(nn.Module):
@@ -93,7 +94,7 @@ def create_file_log(cfg):
     Update file dir, file train log, file val log, model name
     """
     now = datetime.now().strftime("%y_%m_%d")
-    file_dir = f"{now}-train_from_scratch-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-video_len{cfg.DATA.CLIP_LENGTH}-frame_skip:{cfg.DATA.FRAME_SKIP}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
+    file_dir = f"{now}-{cfg.DATA.TYPE_SAMPLERS}:{cfg.DATA.CLIP_LENGTH}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-video_len{cfg.DATA.CLIP_LENGTH}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
     file_dir = os.path.join(cfg.TRAIN.RESULT_DIR, file_dir)
 
     if not os.path.exists(file_dir):
@@ -102,7 +103,7 @@ def create_file_log(cfg):
     cfg.TRAIN.RESULT_DIR = file_dir
     cfg.TRAIN.LOG_FILE_TRAIN = file_dir + '/train.csv'
     cfg.TRAIN.LOG_FILE_VAL = file_dir + '/val.csv'
-    cfg.TRAIN.MODEL_NAME = file_dir + f"/{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
+    cfg.TRAIN.MODEL_NAME = file_dir + f"/normal_scale:{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
     
     # save config file
     with open(file_dir + '/config.yaml', 'w') as f:
@@ -143,7 +144,7 @@ def create_optimizer(model, cfg):
         parameters = model.parameters()
 
     # train from scratch
-    parameters = model.parameters()
+    # parameters = model.parameters()
     optimizer = SGD(parameters,
                     lr=cfg.TRAIN.LEARNING_RATE,
                     momentum=cfg.TRAIN.MOMENTUM,
@@ -170,27 +171,112 @@ def adjust_learning_rate(lr, optimiser):
 
 if __name__ == '__main__':
 
-    config_file_list = ['config/resnet3d_18_fixlenght:8_skip:0.yaml',
-                        'config/resnet3d_18_fixlenght:8_skip:1.yaml',
-                        'config/resnet3d_18_fixlenght:8_skip:2.yaml',
-                        'config/resnet3d_18_fixlenght:16_skip:0.yaml',
-                        'config/resnet3d_18_fixlenght:16_skip:1.yaml',
-                        'config/resnet3d_18_fixlenght:16_skip:2.yaml',
-                        'config/resnet3d_18_fixlenght:24_skip:0.yaml',
-                        'config/resnet3d_18_fixlenght:24_skip:1.yaml',
-                        'config/resnet3d_18_fixlenght:24_skip:2.yaml',
-                        ]
+    # config_file_list = [
+    #                     'config/resnet3d_18_auto_skip:50%_len_video:16.yaml',
+    #                     'config/resnet3d_18_auto_skip:50%_len_video:24.yaml',
+    #                     'config/resnet3d_18_auto_skip:70%_len_video:8.yaml',
+    #                     'config/resnet3d_18_auto_skip:70%_len_video:16.yaml',
+    #                     'config/resnet3d_18_auto_skip:70%_len_video:24.yaml',
+    #                     'config/resnet3d_50_auto_skip:50%_len_video:8.yaml',
+    #                     'config/resnet3d_50_auto_skip:50%_len_video:16.yaml',
+    #                     'config/resnet3d_50_auto_skip:50%_len_video:24.yaml',
+    #                     ]
+
+    # 'config/resnet3d_18_sampler:normal_skipframe:0_per:0.3.yaml',
+    # 'config/resnet3d_18_sampler:normal_skipframe:0_per:0.7.yaml',
+    # 'config/resnet3d_18_sampler:normal_skipframe:1_per:0.3.yaml',
+    
+        # 'config/resnet3d_18_sampler:normal_skipframe:1_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:normal_skipframe:2_per:0.3.yaml',
+        # 'config/resnet3d_18_sampler:normal_skipframe:2_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:normal_skipframe:3_per:0.3.yaml',
+        # 'config/resnet3d_18_sampler:normal_skipframe:3_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:normal_skipframe:4_per:0.3.yaml',
+        # 'config/resnet3d_18_sampler:normal_skipframe:4_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:0_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:0_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:1_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:1_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:2_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:2_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:3_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:3_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:4_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:normal_skipframe:4_per:0.7.yaml',
+
+        # 'config/even_crop_random_resnet3d_18_sampler:1_per:0.3.yaml',
+        # 'config/even_crop_random_resnet3d_18_sampler:1_per:0.5.yaml',
+        # 'config/even_crop_random_resnet3d_18_sampler:1_per:0.7.yaml',
+        # 'config/even_crop_random_resnet3d_18_sampler:3_per:0.3.yaml',
+        # 'config/even_crop_random_resnet3d_18_sampler:3_per:0.5.yaml',
+        # 'config/even_crop_random_resnet3d_18_sampler:3_per:0.7.yaml',
+        # 'config/even_crop_random_resnet3d_50_sampler:1_per:0.3.yaml',
+        # 'config/even_crop_random_resnet3d_50_sampler:1_per:0.5.yaml',
+        # 'config/even_crop_random_resnet3d_50_sampler:1_per:0.7.yaml',
+        # 'config/even_crop_random_resnet3d_50_sampler:3_per:0.3.yaml',
+        # 'config/even_crop_random_resnet3d_50_sampler:3_per:0.5.yaml',
+        # 'config/even_crop_random_resnet3d_50_sampler:3_per:0.7.yaml',
+        # 'config/even_crop_resnet3d_18_sampler:3_per:0.3.yaml',
+        # 'config/even_crop_resnet3d_18_sampler:3_per:0.5.yaml',
+        # 'config/even_crop_resnet3d_18_sampler:3_per:0.7.yaml',
+        # 'config/even_crop_resnet3d_50_sampler:3_per:0.3.yaml',
+        # 'config/even_crop_resnet3d_50_sampler:3_per:0.5.yaml',
+        # 'config/even_crop_resnet3d_50_sampler:3_per:0.7.yaml',
+
+        # 'config/resnet3d_18_sampler:auto_skip:19_per:0.3.yaml',
+
+
+    config_file_list = [
+        # 'config/resnet3d_18_sampler:auto_skip:11_per:0.3.yaml', 
+        # 'config/resnet3d_18_sampler:auto_skip:14_per:0.3.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:19_per:0.5.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:24_per:0.5.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:28_per:0.3.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:28_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:31_per:0.5.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:35_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:47_per:0.5.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:47_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:56_per:0.3.yaml',
+        # cái này pretrain
+        'config/resnet3d_18_sampler:auto_skip:70_per:0.7.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:94_per:0.5.yaml',
+        # 'config/resnet3d_18_sampler:auto_skip:140_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:11_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:14_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:19_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:19_per:0.5.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:24_per:0.5.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:28_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:28_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:31_per:0.5.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:35_per:0.7.yaml',
+        # cái này pretrain
+        # 'config/resnet3d_50_sampler:auto_skip:47_per:0.5.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:47_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:56_per:0.3.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:70_per:0.7.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:94_per:0.5.yaml',
+        # 'config/resnet3d_50_sampler:auto_skip:140_per:0.7.yaml',
+
+    ]
 
     for config_file in config_file_list:
 
         cfg = get_cfg_defaults()
 
+        torch.cuda.empty_cache()
+        time.sleep(10)
+        
+        
         # merge with .yaml
         # input is the config in log dicrectory of model pretrain
         if cfg.TRAIN.TRAIN_CHECKPOINT == True:
             cfg.merge_from_file(cfg.TRAIN.PRETRAIN_CONFIG)
             cfg.TRAIN.TRAIN_CHECKPOINT = True
         else:
+            # cfg.merge_from_file(cfg.TRAIN.PRETRAIN_CONFIG)
+            # cfg.TRAIN.TRAIN_CHECKPOINT = True
             # create file log path
             cfg.merge_from_file(config_file)
             create_file_log(cfg)

@@ -177,7 +177,7 @@ if __name__ == '__main__':
         cfg.TRAIN.TRAIN_CHECKPOINT = True
     else:
         # create file log path
-        cfg.merge_from_file('config/resnet3d_18_fixlenght:16_skip:0.yaml')
+        cfg.merge_from_file('config/resnet3d_18_sampler:normal_skipframe:1_per:0.7.yaml')
         create_file_log(cfg)
     cfg.freeze()
 

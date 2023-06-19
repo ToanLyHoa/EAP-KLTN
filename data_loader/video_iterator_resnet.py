@@ -148,12 +148,20 @@ class VideoIter(data.Dataset):
                 for sampled_indices in sampled_indices_list:
                     sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
                 pass
+            elif self.type_samplers == 'even_crop_random':
+                sampled_indices_list = self.sampler.sampling(frame_count)
+                for sampled_indices in sampled_indices_list:
+                    sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
+                pass
             elif self.type_samplers == 'sequence_sampler':
                 sampled_indices_list = self.sampler.sampling(frame_count)
                 for sampled_indices in sampled_indices_list:
                     sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
                 pass
             elif self.type_samplers == 'fix_length':
+                sampled_indices = self.sampler.sampling(frame_count)
+                sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
+            elif self.type_samplers == 'auto_skip':
                 sampled_indices = self.sampler.sampling(frame_count)
                 sampled_frames.append(video.extract_frames(sampled_indices).unsqueeze(0))
             

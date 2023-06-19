@@ -17,3 +17,36 @@ _C.TRAIN.PRETRAIN_CONFIG = ''
 
 <!-- Nhớ đổi thuộc tính sau torng file config.yaml-->
 TRAIN.PRETRAIN_PATH thành 
+
+
+'config/resnet3d_18_sampler:auto_skip:11_per:0.3.yaml',
+'config/resnet3d_18_sampler:auto_skip:14_per:0.3.yaml',
+'config/resnet3d_18_sampler:auto_skip:19_per:0.3.yaml',
+'config/resnet3d_18_sampler:auto_skip:19_per:0.5.yaml',
+'config/resnet3d_18_sampler:auto_skip:24_per:0.5.yaml',
+'config/resnet3d_18_sampler:auto_skip:28_per:0.3.yaml',
+'config/resnet3d_18_sampler:auto_skip:28_per:0.7.yaml',
+'config/resnet3d_18_sampler:auto_skip:31_per:0.5.yaml',
+'config/resnet3d_18_sampler:auto_skip:35_per:0.7.yaml',
+'config/resnet3d_18_sampler:auto_skip:47_per:0.5.yaml',
+'config/resnet3d_18_sampler:auto_skip:47_per:0.7.yaml',
+'config/resnet3d_18_sampler:auto_skip:56_per:0.3.yaml',
+'config/resnet3d_18_sampler:auto_skip:70_per:0.7.yaml',
+'config/resnet3d_18_sampler:auto_skip:94_per:0.5.yaml',
+'config/resnet3d_18_sampler:auto_skip:140_per:0.7.yaml',
+
+'config/resnet3d_50_sampler:auto_skip:11_per:0.3.yaml',
+'config/resnet3d_50_sampler:auto_skip:14_per:0.3.yaml',
+'config/resnet3d_50_sampler:auto_skip:19_per:0.3.yaml',
+'config/resnet3d_50_sampler:auto_skip:19_per:0.5.yaml',
+'config/resnet3d_50_sampler:auto_skip:24_per:0.5.yaml',
+'config/resnet3d_50_sampler:auto_skip:28_per:0.3.yaml',
+'config/resnet3d_50_sampler:auto_skip:28_per:0.7.yaml',
+'config/resnet3d_50_sampler:auto_skip:31_per:0.5.yaml',
+'config/resnet3d_50_sampler:auto_skip:35_per:0.7.yaml',
+'config/resnet3d_50_sampler:auto_skip:47_per:0.5.yaml',
+'config/resnet3d_50_sampler:auto_skip:47_per:0.7.yaml',
+'config/resnet3d_50_sampler:auto_skip:56_per:0.3.yaml',
+'config/resnet3d_50_sampler:auto_skip:70_per:0.7.yaml',
+'config/resnet3d_50_sampler:auto_skip:94_per:0.5.yaml',
+'config/resnet3d_50_sampler:auto_skip:140_per:0.7.yaml',

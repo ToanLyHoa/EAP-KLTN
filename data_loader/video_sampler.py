@@ -219,6 +219,52 @@ class FixLengthSampler(object):
                         for i in range(0, self.lenght)]
         return indices_list
 
+class Auto_skip(object):
+    def __init__(self, num_frame, percentage = 0.5):
+
+        self.num_frame = num_frame
+        self.per = percentage
+
+    def sampling(self, frame_count = 187):
+
+        n_frames = int(frame_count*self.per)
+        if n_frames >= self.num_frame:
+            frames = random.sample(range(0, n_frames), self.num_frame)
+            frames.sort()
+        else:
+            frames = [i for i in range(0, n_frames)]
+            for i in range(n_frames, self.num_frame):
+                frames.append(n_frames - 1)
+        
+        return frames
+
+# class Auto_skip(object):
+#     def __init__(self,num_frame , percentage = 0.5):
+#         self.num_frame = num_frame
+#         self.per = percentage
+
+#     def sampling(self,frame_count = 187):
+
+#         n_frames = int(frame_count*self.per)
+#         range_max = self.num_frame
+        
+#         if n_frames > self.num_frame:
+#             remainder = self.num_frame % n_frames
+#             skip = n_frames // self.num_frame
+#         else:
+#             remainder = 0
+#             skip = 1
+#             range_max = n_frames
+            
+#         frames = [i*skip + random.randint(0,remainder) if remainder < skip
+#                   else i * skip + random.randint(0,skip)
+#             for i in range(0,range_max)]
+        
+#         while(len(frames)<self.num_frame):
+#             frames.append(n_frames)
+            
+#         return frames
+import math, random
 class LoopPadding(object):
 
     def __init__(self, size):
@@ -234,6 +280,58 @@ class LoopPadding(object):
 
         return out
 
+class TemporalRandomEvenCrop(object):
+
+    def __init__(self, size, n_samples=1, percentage = .5):
+        self.size = size
+        self.n_samples = n_samples
+        self.loop = LoopPadding(size)
+        self.per = percentage
+
+    def sampling(self, frame_count):
+
+
+        n_frames = int(frame_count*self.per)
+        frame_indices = [i for i in range(n_frames)]
+
+        stride = 1
+        if self.n_samples != 1:
+            stride = max(
+                1, math.ceil((n_frames - 1 - self.size) / (self.n_samples - 1)))
+
+        out = []
+        count = self.n_samples
+        while count != 0:
+            for begin_index in frame_indices[::stride]:
+                count -= 1
+                if len(out) >= self.n_samples:
+                    break
+
+                if stride != 1 and stride > self.size:
+                    end_index = min(frame_indices[-1] + 1, begin_index + stride)
+                else:
+                    end_index = min(frame_indices[-1] + 1, begin_index + self.size)
+
+
+                offset = end_index - begin_index
+                if offset >= self.size:
+                    sample = random.sample(range(begin_index, end_index), self.size)
+                else:
+                    sample = random.sample(range(begin_index, end_index), offset)
+
+                sample.sort()
+
+                if len(sample) < self.size:
+                    out.append(self.loop(sample))
+                    break
+                else:
+                    out.append(sample)
+
+                if count == 0:
+                    break
+
+        return out
+
 class TemporalEvenCrop(object):
 
     def __init__(self, size, n_samples=1, percentage = .5):
@@ -244,32 +342,50 @@ class TemporalEvenCrop(object):
 
     def sampling(self, frame_count):
 
-        frame_indices = [i for i in range(frame_count)]
 
-        n_frames = int(len(frame_indices)*self.per)
+        n_frames = int(frame_count*self.per)
+        frame_indices = [i for i in range(n_frames)]
 
         stride = 1
         if self.n_samples != 1:
             stride = max(
                 1, math.ceil((n_frames - 1 - self.size) / (self.n_samples - 1)))
-        
         # stride = 1
 
         out = []
-        for begin_index in frame_indices[::stride]:
-            if len(out) >= self.n_samples:
-                break
-            end_index = min(frame_indices[-1] + 1, begin_index + self.size)
-            sample = list(range(begin_index, end_index))
+        count = self.n_samples
+        while count != 0:
+            for begin_index in frame_indices[::stride]:
+                count -= 1
+                if len(out) >= self.n_samples:
+                    break
 
-            if len(sample) < self.size:
-                out.append(self.loop(sample))
-                break
-            else:
-                out.append(sample)
+                if stride != 1 and stride > self.size:
+                    end_index = min(frame_indices[-1] + 1, begin_index + stride)
+                else:
+                    end_index = min(frame_indices[-1] + 1, begin_index + self.size)
+
+
+                offset = end_index - begin_index
+                if offset >= self.size:
+                    start = random.sample(range(begin_index, end_index - self.size + 1), 1)[0]
+                    sample = list(range(start, start + self.size))
+                else:
+                    sample = random.sample(range(begin_index, end_index), offset)
+
+                sample.sort()
+
+
+                if len(sample) < self.size:
+                    out.append(self.loop(sample))
+                    break
+                else:
+                    out.append(sample)
+
+                if count == 0:
+                    break
 
         return out
-
 
 class FrameDifference(object):
     def __init__(self,num,**kwagrs):

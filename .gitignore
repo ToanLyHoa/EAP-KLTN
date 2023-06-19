@@ -7,6 +7,17 @@ backbone/pretrain/
 
 log/
 
+log_final/
+
 UCF-101-JPG/
 
 log_20052023/
+
+train_transformer2.py
+train_transformer3.py 
+train_transformer4.py 
+train_transformer5.py 
+train_transformer6.py 
+train_transformer7.py 
+train_transformer8.py 
+train_transformer9.py

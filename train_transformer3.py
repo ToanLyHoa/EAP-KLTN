@@ -88,7 +88,7 @@ def create_file_log(cfg):
     Update file dir, file train log, file val log, model name
     """
     now = datetime.now().strftime("%y_%m_%d")
-    file_dir = f"{now}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
+    file_dir = f"{now}-{cfg.BACKBONE.NAME}-{cfg.HEAD.NAME}=sampler:{cfg.DATA.TYPE_SAMPLERS}-video_per:{cfg.DATA.VIDEO_PER}-num_samplers:{cfg.DATA.NUM_SAMPLERS}-optimize:{cfg.TRAIN.OPTIMIZER}-loss:{cfg.TRAIN.LOSS}"
     file_dir = os.path.join(cfg.TRAIN.RESULT_DIR, file_dir)
 
     if not os.path.exists(file_dir):
@@ -211,8 +211,8 @@ if __name__ == '__main__':
         create_file_log(cfg)
     
 
-    # cfg.DATA.NUM_SAMPLERS = int(187/(cfg.DATA.FRAME_SKIP + cfg.DATA.CLIP_LENGTH)) + 1
-    # cfg.HEAD.DEPTH = cfg.DATA.NUM_SAMPLERS
+    cfg.DATA.NUM_SAMPLERS = int(187/(cfg.DATA.FRAME_SKIP + cfg.DATA.CLIP_LENGTH)) + 1
+    cfg.HEAD.DEPTH = cfg.DATA.NUM_SAMPLERS
 
     cfg.freeze()
 

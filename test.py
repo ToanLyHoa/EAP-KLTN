@@ -4,6 +4,8 @@
 import coloredlogs, logging
 coloredlogs.install()
 
+python3 train_transformer.py; python3 train_transformer2.py; python3 train_transformer3.py; python3 train_transformer4.py; python3 train_transformer4.py; python3 train_transformer6.py; python3 train_transformer7.py; python3 train_transformer8.py; python3 train_transformer9.py
+
 
 '''
 ===  S T A R T  O F  C L A S S  L R S C H E D U L E R ===

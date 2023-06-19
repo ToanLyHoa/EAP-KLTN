@@ -58,11 +58,18 @@ def get_data(cfg):
         val_sampler = sampler.TemporalEvenCrop(size = cfg.CLIP_LENGTH, 
                                                     n_samples= cfg.NUM_SAMPLERS, 
                                                     percentage = cfg.VIDEO_PER)
+    elif cfg.TYPE_SAMPLERS == 'even_crop_random':
+            val_sampler = sampler.TemporalRandomEvenCrop(size = cfg.CLIP_LENGTH, 
+                                                     n_samples= cfg.NUM_SAMPLERS, 
+                                                     percentage = cfg.VIDEO_PER)
     elif cfg.TYPE_SAMPLERS == 'sequence_sampler':
         val_sampler = sampler.SequenceSampler(len_scale = cfg.CLIP_LENGTH, 
                                                     frame_skip = cfg.FRAME_SKIP)
     elif cfg.TYPE_SAMPLERS == 'fix_length':
         val_sampler = sampler.FixLengthSampler(cfg.CLIP_LENGTH, cfg.FRAME_SKIP)
+    elif cfg.TYPE_SAMPLERS == 'auto_skip':
+            val_sampler = sampler.Auto_skip(num_frame = cfg.CLIP_LENGTH, 
+                                                    percentage = cfg.VIDEO_PER)
 
 
     # vid_transform_val=transforms.Compose(
@@ -103,11 +110,18 @@ def get_data(cfg):
             train_sampler = sampler.TemporalEvenCrop(size = cfg.CLIP_LENGTH, 
                                                      n_samples= cfg.NUM_SAMPLERS, 
                                                      percentage = cfg.VIDEO_PER)
+        elif cfg.TYPE_SAMPLERS == 'even_crop_random':
+            train_sampler = sampler.TemporalRandomEvenCrop(size = cfg.CLIP_LENGTH, 
+                                                     n_samples= cfg.NUM_SAMPLERS, 
+                                                     percentage = cfg.VIDEO_PER)
         elif cfg.TYPE_SAMPLERS == 'sequence_sampler':
             train_sampler = sampler.SequenceSampler(len_scale = cfg.CLIP_LENGTH, 
                                                     frame_skip = cfg.FRAME_SKIP)
         elif cfg.TYPE_SAMPLERS == 'fix_length':
             train_sampler = sampler.FixLengthSampler(cfg.CLIP_LENGTH, cfg.FRAME_SKIP)
+        elif cfg.TYPE_SAMPLERS == 'auto_skip':
+            train_sampler = sampler.Auto_skip(num_frame = cfg.CLIP_LENGTH, 
+                                                    percentage = cfg.VIDEO_PER)
 
 
         train_crop = 'random'

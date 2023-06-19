@@ -9,7 +9,7 @@ BACKBONE:
   PRETRAINED_MODEL: backbone/pretrain/r3d18_K_200ep.pth
   RESNET_WIDEN_FACTOR: 1.0
 DATA:
-  BATCH_SIZE: 16
+  BATCH_SIZE: 24
   CLIP_LENGTH: 16
   CLIP_SIZE:
   - 16
@@ -36,7 +36,7 @@ DATA:
   TRAIN_INTERVAL:
   - 1
   - 2
-  TYPE_SAMPLERS: even_crop
+  TYPE_SAMPLERS: even_crop_random
   FRAME_SKIP: 16
   USE_GPU: true
   VAL_CLIP_LENGTH: ''
@@ -47,7 +47,7 @@ DATA:
   VIDEO_PER: 0.7
   VIDEO_PER_TRAIN: 0.7
   VIDEO_PER_VAL: 0.7
-  WORKERS: 4
+  WORKERS: 8
 HEAD:
   ATTN_DROPOUT: 0
   CROSS_DIM_HEAD: 64
@@ -69,10 +69,10 @@ HEAD:
   SELF_PER_CROSS_ATTN: 1
   WEIGHT_TIE_LAYERS: true
 TRAIN:
-  BATCH_SIZE: 16
+  BATCH_SIZE: 24
   DAMPENING: 0.0
   DEVICE: cuda:0
-  EPOCH: 100
+  EPOCH: 40
   GOOGLE_COLAB: false
   LEARNING_RATE: 0.1
   LOG_FILE_TRAIN: ''
@@ -80,13 +80,13 @@ TRAIN:
   LOSS: crossentropylossmean
   LR_FACTOR: 0.1
   LR_MULT:
-  - 0.1
-  - 0.1
+  - 1
+  - 1
   - 1
   LR_STEP:
-  - 25
-  - 50
-  - 75
+  - 10
+  - 20
+  - 30
   MODEL_NAME: ''
   MOMENTUM: 0.9
   NESTEROV: false
@@ -97,5 +97,5 @@ TRAIN:
   SAVE_FREQUENCY: 5
   TRAIN_CHECKPOINT: false
   WARM_UP: true
-  WEIGHT_DECAY: 0.001
-  WORKERS: 4
+  WEIGHT_DECAY: 0.0001
+  WORKERS: 8
