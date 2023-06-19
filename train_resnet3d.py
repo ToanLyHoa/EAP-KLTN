@@ -170,6 +170,8 @@ def adjust_learning_rate(lr, optimiser):
 if __name__ == '__main__':
     cfg = get_cfg_defaults()
 
+    config_file = 'config/resnet3d_18_sampler:normal_skipframe:1_per:0.7.yaml'
+
     # merge with .yaml
     # input is the config in log dicrectory of model pretrain
     if cfg.TRAIN.TRAIN_CHECKPOINT == True:
@@ -177,7 +179,7 @@ if __name__ == '__main__':
         cfg.TRAIN.TRAIN_CHECKPOINT = True
     else:
         # create file log path
-        cfg.merge_from_file('config/resnet3d_18_sampler:normal_skipframe:1_per:0.7.yaml')
+        cfg.merge_from_file(config_file)
         create_file_log(cfg)
     cfg.freeze()
 
