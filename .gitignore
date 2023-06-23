@@ -12,6 +12,8 @@ UCF-101-JPG/
 
 log_20052023/
 
+video_test/
+
 train_transformer2.py
 train_transformer3.py 
 train_transformer4.py 

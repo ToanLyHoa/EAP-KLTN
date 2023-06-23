@@ -96,3 +96,7 @@ Tương tự với khi thực nghiệm cho mô hình, ở đây ta chỉ cần t
 ```python
 173    config_file = 'config/even_crop_random_resnet3d_18_sampler:1_per:0.3.yaml'
 ```
+
+# Pretrain của mô hình
+
+Đây là một số file log chứa acc theo từng epoch của train và test của một số mô hình có thể được tìm thấy [tại đây](https://drive.google.com/drive/folders/19ZRp8FGiUz-hWE_ycNh5rIZbT1nYPMx-?usp=drive_link)

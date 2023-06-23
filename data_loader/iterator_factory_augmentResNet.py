@@ -171,7 +171,7 @@ def create(cfg, return_train=True, return_len=False):
     if cfg.EVAL_ONLY:
         val = get_data(cfg)
         val_loader = torch.utils.data.DataLoader(val,
-            batch_size = cfg.BATCH_SIZE, shuffle = False,
+            batch_size = cfg.BATCH_SIZE, shuffle = True,
             num_workers = cfg.WORKERS, pin_memory = False)
         return val_loader, val.__len__()
 
